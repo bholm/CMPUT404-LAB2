@@ -2,6 +2,7 @@
 import socket
 import sys
 import time
+from multiprocessing import Process
 
 # define address & buffer size
 HOST = ""
@@ -20,14 +21,20 @@ def get_remote_ip(host):
     return remote_ip
 
 # send data to server
-def send_data(serversocket, payload):
+def handle_request(serversocket, payload, conn):
     print("Sending payload")
     try:
-        serversocket.sendall(payload.encode())
+        serversocket.sendall(payload)
     except socket.error:
         print("Send failed")
         sys.exit()
     print("Payload sent successfully")
+    serversocket.shutdown(socket.SHUT_WR)
+                
+    data = serversocket.recv(BUFFER_SIZE)
+    print(f"Sending received data {data} to client")
+    # send data back
+    conn.send(data)
 
 def main():
     host = "www.google.com"
@@ -55,15 +62,10 @@ def main():
 
                 # send data
                 send_full_data = conn.recv(BUFFER_SIZE)
-                print(f"Sending received data {send_full_data} to {host}")
-                proxy_end.sendall(send_full_data)
-
-                proxy_end.shutdown(socket.SHUT_WR)
-
-                data = proxy_end.recv(BUFFER_SIZE)
-                print(f"Sending received data {data} to client")
-                # send data back
-                conn.send(data)
+                p = Process(target=handle_request, args=(proxy_end, send_full_data, conn))
+                p.daemon = True
+                p.start()
+                print("Started process", p)
 
         conn.close()
 
