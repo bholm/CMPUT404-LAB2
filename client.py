@@ -39,7 +39,7 @@ def main():
         #define address info, payload, and buffer size
         host = 'www.google.com'
         port = 80
-        payload = f'GET / HTTP/1.0\r\nHost: {host}\r\n\r\n'
+        payload = f'GET / HTTP/1.0\nHost: {host}\n\n'
         buffer_size = 4096
 
         #make the socket, get the ip, and connect
